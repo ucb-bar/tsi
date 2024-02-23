@@ -1,8 +1,13 @@
-use std::path::PathBuf;
+use std::fs::File;
+use std::io::Write;
+use std::os::unix::io::AsRawFd;
 use std::time::Duration;
+use std::{io::Read, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use clap_num::maybe_hex;
+use termios::ffi::{cfsetspeed, tcgetattr};
+use termios::*;
 
 use tsi::write_req;
 
@@ -49,18 +54,48 @@ enum Command {
 fn main() {
     let args = Args::parse();
 
-    println!("{} {}", args.tty, args.baud);
-    let mut port = serialport::new(args.tty, args.baud)
-        .timeout(Duration::from_secs(3))
-        .open()
+    let mut file = File::options()
+        .read(true)
+        .write(true)
+        .open(args.tty)
         .expect("failed to open TTY");
+    let mut tty = Termios::from_fd(file.as_raw_fd()).expect("failed to open TTY");
+
+    tty.c_cflag &= !PARENB; // Clear parity bit, disabling parity (most common)
+    tty.c_cflag &= !CSTOPB; // Clear stop field, only one stop bit used in communication (most common)
+    tty.c_cflag &= !CSIZE; // Clear all the size bits
+    tty.c_cflag |= CS8; // 8 bits per byte (most common)
+    tty.c_cflag &= !termios::os::linux::CRTSCTS; // Disable RTS/CTS hardware flow control (most common)
+    tty.c_cflag |= CREAD | CLOCAL; // Turn on READ & ignore ctrl lines (CLOCAL = 1)
+
+    tty.c_lflag &= !ICANON;
+    tty.c_lflag &= !ECHO; // Disable echo
+    tty.c_lflag &= !ECHOE; // Disable erasure
+    tty.c_lflag &= !ECHONL; // Disable new-line echo
+    tty.c_lflag &= !ISIG; // Disable interpretation of INTR, QUIT and SUSP
+
+    tty.c_iflag &= !(IXON | IXOFF | IXANY); // Turn off s/w flow ctrl
+    tty.c_iflag &= !(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL); // Disable any special handling of received bytes
+
+    tty.c_oflag &= !OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
+    tty.c_oflag &= !ONLCR; // Prevent conversion of newline to carriage return/line feed
+
+    tty.c_cc[VTIME] = 0;
+    tty.c_cc[VMIN] = 0;
+
+    cfsetispeed(&mut tty, termios::os::linux::B115200).expect("could not set TTY baud rate");
+    cfsetospeed(&mut tty, termios::os::linux::B115200).expect("could not set TTY baud rate");
+
+    tcsetattr(file.as_raw_fd(), TCSANOW, &tty).unwrap();
 
     match args.command {
         Command::Read { addr, len } => {
+            // TODO: Send length with address.
             println!("Reading from {addr:#X}...");
-            write_req(&mut port, tsi::Command::Read, addr, &[]);
-            let mut serial_buf: Vec<u8> = vec![0; len];
-            port.read(serial_buf.as_mut_slice())
+            write_req(&mut file, tsi::Command::Read, addr, &[]).expect("failed to write request");
+            file.flush();
+            let mut serial_buf: Vec<u8> = vec![0; 1];
+            file.read_exact(serial_buf.as_mut_slice())
                 .expect("Found no data!");
             println!("Read 0x{}", hex::encode(&serial_buf));
         }
@@ -71,7 +106,8 @@ fn main() {
                 let extra_bytes = len as usize - data.len();
                 data.extend(vec![0; extra_bytes]);
             }
-            write_req(&mut port, tsi::Command::Write, addr, &data);
+            write_req(&mut file, tsi::Command::Write, addr, &data)
+                .expect("failed to write request");
         }
     }
 }

@@ -27,7 +27,7 @@ pub fn write_req<W: Write>(
     let num_words = std::cmp::max(data.len() / 4, 1);
     w.write_all(&(num_words - 1).to_le_bytes())?;
 
-    write_chunks(w, data);
+    write_chunks(w, data)?;
 
     Ok(())
 }
