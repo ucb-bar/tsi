@@ -14,7 +14,8 @@ pub struct Args {
     tty: String,
     /// The TTY device.
     #[clap(short = 'b', long)]
-    baud: u32,
+    /// baud rate is optional. Default is 115200.
+    baud: Option<u32>,
     #[clap(subcommand)]
     command: Command,
 }
@@ -49,8 +50,9 @@ enum Command {
 fn main() {
     let args = Args::parse();
 
-    println!("{} {}", args.tty, args.baud);
-    let mut port = serialport::new(args.tty, args.baud)
+    println!("{} {}", args.tty, args.baud.unwrap_or(0));
+    // set default baud rate to 115200
+    let mut port = serialport::new(args.tty, args.baud.unwrap_or(0))
         .timeout(Duration::from_secs(3))
         .open()
         .expect("failed to open TTY");
@@ -58,7 +60,7 @@ fn main() {
     match args.command {
         Command::Read { addr, len } => {
             println!("Reading from {addr:#X}...");
-            write_req(&mut port, tsi::Command::Read, addr, &[]);
+            write_req(&mut port, tsi::Command::Read, addr, &[0,0,0,0]); // zero pad so both commands are 24
             let mut serial_buf: Vec<u8> = vec![0; len];
             port.read(serial_buf.as_mut_slice())
                 .expect("Found no data!");

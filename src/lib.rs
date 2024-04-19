@@ -32,6 +32,18 @@ pub fn write_req<W: Write>(
     Ok(())
 }
 
+pub fn read_req <W: Write>(
+    w: &mut W,
+    command: Command,
+    addr: u64,
+    len: u64,
+) -> std::io::Result<()> {
+    w.write_all(&command.to_u32().to_le_bytes())?;
+    w.write_all(&addr.to_le_bytes())?;
+    w.write_all(&len.to_le_bytes())?;
+    Ok(())
+}
+
 pub fn write_chunks<W: Write>(w: &mut W, data: &[u8]) -> std::io::Result<()> {
     let extra_bytes = (data.len() + 3) / 4 * 4 - data.len();
     w.write_all(data)?;
