@@ -41,6 +41,8 @@ pub fn read_req <W: Write>(
     w.write_all(&command.to_u32().to_le_bytes())?;
     w.write_all(&addr.to_le_bytes())?;
     w.write_all(&len.to_le_bytes())?;
+    //write 4 bytes of 0 padding
+    w.write_all(&[0; 4])?;
     Ok(())
 }
 
