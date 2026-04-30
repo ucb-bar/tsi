@@ -13,3 +13,6 @@ hex = "0.4"
 
 [[bin]]
 name = "uarttsi"
+
+[[bin]]
+name = "read_tty_raw"

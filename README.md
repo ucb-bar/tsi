@@ -31,28 +31,22 @@ To build the debug binary, run `cargo build`. The binary will be located in `tar
 
 To create a pseudo-TTY for testing purposes, run the following:
 
-```
+```bash
 socat -d -d pty,raw,echo=0 pty,raw,echo=0
 ```
 
-Then, use `utils/read_tty_raw.py` to listen on one of the created pseudo-TTYs by modifying the `fp_out`
-variable:
+Then, use the `read_tty_raw` binary to listen on one of the created pseudo-TTYs:
 
-```
-fp_out = open("/dev/ttys011", "rb")
-```
-
-Then, run the script using python:
-
-```
-python3 read_tty_raw.py
+```bash
+./target/debug/read_tty_raw -t /dev/ttys012 -b 0
 ```
 
-When you write to the other pseudo-TTY, the raw bytes should show up in the terminal where you ran the 
-Python scripts.
+When you write to the other pseudo-TTY, the raw bytes should show up in the `read_tty_raw` terminal.
 
 On Mac OS, you will need to specify a baud rate of zero when reading/writing pseudo-TTYs:
 
 ```
 ./target/debug/uarttsi -t /dev/ttys011 -b 0 write 0x1000 deadbeef
 ```
+
+To test that reads are working, it may be useful to make another binary utility to simulate a TSI memory.
