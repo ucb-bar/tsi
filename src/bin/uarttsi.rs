@@ -13,7 +13,7 @@ pub struct Args {
     tty: String,
     /// The TTY device.
     #[clap(short = 'b', long)]
-    baud: u32,
+    baud_rate: u32,
     #[clap(subcommand)]
     command: Command,
 }
@@ -48,8 +48,8 @@ enum Command {
 fn main() {
     let args = Args::parse();
 
-    println!("{} {}", args.tty, args.baud);
-    let mut tsi = Tsi::new(args.tty, args.baud);
+    println!("{} {}", args.tty, args.baud_rate);
+    let mut tsi = Tsi::new(args.tty, args.baud_rate);
 
     match args.command {
         Command::Read { addr, len } => {
