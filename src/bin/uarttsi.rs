@@ -49,34 +49,6 @@ fn main() {
     match args.command {
         Command::Read { addr } => {
             println!("Reading from {addr:#X}...");
-<<<<<<< HEAD
-            println!("Read 0x{:X}", len);
-            read_req(&mut port, tsi::Command::Read, addr, len as u64);
-            let mut serial_buf: Vec<u8> = vec![0; len];
-            port.read(serial_buf.as_mut_slice())
-                .expect("Found no data!");
-            println!("Read 0x{}", hex::encode(&serial_buf));
-        }
-        Command::Write { addr, data, len } => {
-            println!("Writing {data} to {addr:#X}...");
-            //check if the first character is 0x
-            let mut parsed_data: Vec<u8> = Vec::new();
-            if data.starts_with("0x") {
-                //parse it as hex
-                parsed_data = hex::decode(data).expect("could not parse data");
-            } else {
-                //parse it as decimal
-                let mut decimal_data = data.parse::<u64>().expect("could not parse data");
-                //convert decimal to hex
-                parsed_data = decimal_data.to_le_bytes().to_vec();
-            }
-            
-            if let Some(len) = len {
-                let extra_bytes = len as usize - parsed_data.len();
-                parsed_data.extend(vec![0; extra_bytes]);
-            }
-            write_req(&mut port, tsi::Command::Write, addr, &parsed_data);
-=======
             println!(
                 "Read {:#010x}",
                 tsi.read_word(addr).expect("failed to read")
@@ -90,7 +62,6 @@ fn main() {
             }
             tsi.write(addr, &data).expect("failed to write");
             println!("Write complete");
->>>>>>> origin/main
         }
     }
 }
