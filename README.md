@@ -56,26 +56,3 @@ On Mac OS, you will need to specify a baud rate of zero when reading/writing pse
 ```
 ./target/debug/uarttsi -t /dev/ttys011 -b 0 write 0x1000 deadbeef
 ```
-
-
-## Design
-
-Default baud rate is 115200.
-
-### Read commands
-
-Takes in an address as a mandatory position argument. Can output read data as raw bytes or hex display.
-Length provided as optional flag, default is 4.
-
-### Write commands
-
-Takes in an address as a mandatory position argument. Can take data as hex or decimal using same strategy as address.
-Length provided as mandatory flag.
-
-### Write binary command
-
-Takes in an address and file as a mandatory position argument. Option to reset core and start executing.
-
-### Things to debug
-- Why does FPGA get reset
-- Why does FPGA not work on lab computer

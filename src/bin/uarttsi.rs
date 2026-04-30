@@ -1,11 +1,7 @@
-use std::path::PathBuf;
-use std::time::Duration;
-
 use clap::{Parser, Subcommand};
 use clap_num::maybe_hex;
 
-use tsi::write_req;
-use tsi::read_req;
+use tsi::Tsi;
 
 #[derive(Debug, Parser)]
 #[clap(name = "uarttsi", version)]
@@ -15,8 +11,7 @@ pub struct Args {
     tty: String,
     /// The TTY device.
     #[clap(short = 'b', long)]
-    /// baud rate is optional. Default is 115200.
-    baud: Option<u32>,
+    baud: u32,
     #[clap(subcommand)]
     command: Command,
 }
@@ -27,9 +22,6 @@ enum Command {
     Read {
         #[clap(value_parser=maybe_hex::<u64>)]
         addr: u64,
-        /// The desired read length in bytes. Is rounded up to the nearest multiple of 4.
-        #[clap(short='l', long, value_parser=maybe_hex::<usize>, default_value="4")]
-        len: usize,
     },
     /// Help message for write.
     Write {
@@ -51,16 +43,13 @@ enum Command {
 fn main() {
     let args = Args::parse();
 
-    println!("{} {}", args.tty, args.baud.unwrap_or(0));
-    // set default baud rate to 115200
-    let mut port = serialport::new(args.tty, args.baud.unwrap_or(0))
-        .timeout(Duration::from_secs(3))
-        .open()
-        .expect("failed to open TTY");
+    println!("{} {}", args.tty, args.baud);
+    let mut tsi = Tsi::new(args.tty, args.baud);
 
     match args.command {
-        Command::Read { addr, len } => {
+        Command::Read { addr } => {
             println!("Reading from {addr:#X}...");
+<<<<<<< HEAD
             println!("Read 0x{:X}", len);
             read_req(&mut port, tsi::Command::Read, addr, len as u64);
             let mut serial_buf: Vec<u8> = vec![0; len];
@@ -87,6 +76,21 @@ fn main() {
                 parsed_data.extend(vec![0; extra_bytes]);
             }
             write_req(&mut port, tsi::Command::Write, addr, &parsed_data);
+=======
+            println!(
+                "Read {:#010x}",
+                tsi.read_word(addr).expect("failed to read")
+            );
+        }
+        Command::Write { addr, data, len } => {
+            println!("Writing {data} to {addr:#X}...");
+            let mut data = hex::decode(data).expect("could not parse data");
+            if let Some(len) = len {
+                data.resize(len, 0);
+            }
+            tsi.write(addr, &data).expect("failed to write");
+            println!("Write complete");
+>>>>>>> origin/main
         }
     }
 }
