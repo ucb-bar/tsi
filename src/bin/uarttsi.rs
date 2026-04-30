@@ -1,3 +1,5 @@
+use std::{thread, time::Duration};
+
 use clap::{Parser, Subcommand};
 use clap_num::maybe_hex;
 
@@ -69,6 +71,7 @@ fn main() {
                 data.resize(len, 0);
             }
             tsi.write(addr, &data).expect("failed to write");
+            thread::sleep(Duration::from_millis(10));
             println!("Write complete");
         }
     }
