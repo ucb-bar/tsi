@@ -21,7 +21,6 @@ pub fn write_req<W: Write>(w: &mut W, addr: u64, data: &[u8]) -> std::io::Result
     w.write_all(&addr.to_le_bytes())?;
 
     let num_words = num_words(data.len() as u64);
-    println!("num_words {num_words}");
     w.write_all(&(num_words - 1).to_le_bytes())?;
 
     let extra_bytes = num_words as usize * 4 - data.len();
