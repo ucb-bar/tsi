@@ -22,6 +22,9 @@ enum Command {
     Read {
         #[clap(value_parser=maybe_hex::<u64>)]
         addr: u64,
+        /// The desired read length in bytes.
+        #[clap(short='l', long, value_parser=maybe_hex::<usize>, default_value_t=8)]
+        len: usize,
     },
     /// Help message for write.
     Write {
@@ -33,7 +36,7 @@ enum Command {
         data: String,
         /// The desired write length in bytes.
         ///
-        /// If provided, zero-pads the write data to the given length. If length is not a multiple
+        /// If provided, zero-pads/truncates the write data to the given length. If length is not a multiple
         /// of 4, data will be additionally zero-padded to a multiple of 4 bytes.
         #[clap(short='l', long, value_parser=maybe_hex::<usize>)]
         len: Option<usize>,
@@ -47,11 +50,16 @@ fn main() {
     let mut tsi = Tsi::new(args.tty, args.baud);
 
     match args.command {
-        Command::Read { addr } => {
+        Command::Read { addr, len } => {
             println!("Reading from {addr:#X}...");
             println!(
-                "Read {:#010x}",
-                tsi.read_word(addr).expect("failed to read")
+                "Read {}",
+                tsi.read(addr, len)
+                    .expect("failed to read")
+                    .iter()
+                    .map(|b| format!("{:02x}", b))
+                    .collect::<Vec<_>>()
+                    .join(" ")
             );
         }
         Command::Write { addr, data, len } => {
