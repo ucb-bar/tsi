@@ -49,7 +49,12 @@ fn main() {
     let args = Args::parse();
 
     println!("{} {}", args.tty, args.baud_rate);
-    let mut tsi = Tsi::new(args.tty, args.baud_rate);
+    let mut tsi = Tsi::new(
+        serialport::new(&args.tty, args.baud_rate)
+            .timeout(Duration::from_millis(3000))
+            .open()
+            .expect("failed to open TTY"),
+    );
 
     match args.command {
         Command::Read { addr, len } => {
