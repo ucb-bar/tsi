@@ -1,4 +1,7 @@
-use std::{thread, time::Duration};
+use std::{
+    thread::{self, sleep},
+    time::Duration,
+};
 
 use clap::{Parser, Subcommand};
 use clap_num::maybe_hex;
@@ -51,10 +54,11 @@ fn main() {
     println!("{} {}", args.tty, args.baud_rate);
     let mut tsi = Tsi::new(
         serialport::new(&args.tty, args.baud_rate)
-            .timeout(std::time::Duration::from_millis(500))
+            .timeout(Duration::from_millis(3000))
             .open()
             .expect("failed to open TTY"),
     );
+    sleep(Duration::from_millis(500));
 
     match args.command {
         Command::Read { addr, len } => {
