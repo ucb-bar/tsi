@@ -1,4 +1,4 @@
-use std::{io::Write, time::Duration};
+use std::io::Write;
 
 use serialport::SerialPort;
 
@@ -34,13 +34,8 @@ pub fn write_req<W: Write>(w: &mut W, addr: u64, data: &[u8]) -> std::io::Result
 pub struct Tsi(Box<dyn SerialPort>);
 
 impl Tsi {
-    pub fn new(path: impl AsRef<str>, baud_rate: u32) -> Self {
-        Self(
-            serialport::new(path.as_ref(), baud_rate)
-                .timeout(Duration::from_secs(3))
-                .open()
-                .expect("failed to open TTY"),
-        )
+    pub fn new(port: Box<dyn SerialPort>) -> Self {
+        Self(port)
     }
 
     pub fn read(&mut self, addr: u64, len: usize) -> std::io::Result<Vec<u8>> {
