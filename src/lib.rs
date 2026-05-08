@@ -10,24 +10,23 @@ pub fn num_words(len: u64) -> u64 {
 }
 
 pub fn read_req<W: Write>(w: &mut W, addr: u64, len: u64) -> std::io::Result<()> {
-    w.write_all(&READ_OPCODE.to_le_bytes())?;
-    w.write_all(&addr.to_le_bytes())?;
-    w.write_all(&(num_words(len) - 1).to_le_bytes())?;
-    Ok(())
+    let mut buf = [0u8; 20];
+    buf[0..4].copy_from_slice(&READ_OPCODE.to_le_bytes());
+    buf[4..12].copy_from_slice(&addr.to_le_bytes());
+    buf[12..20].copy_from_slice(&(num_words(len) - 1).to_le_bytes());
+    w.write_all(&buf)
 }
 
 pub fn write_req<W: Write>(w: &mut W, addr: u64, data: &[u8]) -> std::io::Result<()> {
-    w.write_all(&WRITE_OPCODE.to_le_bytes())?;
-    w.write_all(&addr.to_le_bytes())?;
-
     let num_words = num_words(data.len() as u64);
-    w.write_all(&(num_words - 1).to_le_bytes())?;
-
     let extra_bytes = num_words as usize * 4 - data.len();
-    w.write_all(data)?;
-    w.write_all(&vec![0; extra_bytes])?;
-
-    Ok(())
+    let mut buf = Vec::with_capacity(20 + data.len() + extra_bytes);
+    buf.extend_from_slice(&WRITE_OPCODE.to_le_bytes());
+    buf.extend_from_slice(&addr.to_le_bytes());
+    buf.extend_from_slice(&(num_words - 1).to_le_bytes());
+    buf.extend_from_slice(data);
+    buf.extend_from_slice(&vec![0; extra_bytes]);
+    w.write_all(&buf)
 }
 
 #[derive(Debug)]
