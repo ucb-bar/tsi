@@ -17,16 +17,13 @@ pub fn read_req<W: Write>(w: &mut W, addr: u64, len: u64) -> std::io::Result<()>
 }
 
 pub fn write_req<W: Write>(w: &mut W, addr: u64, data: &[u8]) -> std::io::Result<()> {
+    let num_words = num_words(data.len() as u64);
+    let extra_bytes = num_words as usize * 4 - data.len();
     w.write_all(&WRITE_OPCODE.to_le_bytes())?;
     w.write_all(&addr.to_le_bytes())?;
-
-    let num_words = num_words(data.len() as u64);
     w.write_all(&(num_words - 1).to_le_bytes())?;
-
-    let extra_bytes = num_words as usize * 4 - data.len();
     w.write_all(data)?;
     w.write_all(&vec![0; extra_bytes])?;
-
     Ok(())
 }
 

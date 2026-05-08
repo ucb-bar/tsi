@@ -1,4 +1,7 @@
-use std::{thread, time::Duration};
+use std::{
+    thread::{self, sleep},
+    time::Duration,
+};
 
 use clap::{Parser, Subcommand};
 use clap_num::maybe_hex;
@@ -55,6 +58,7 @@ fn main() {
             .open()
             .expect("failed to open TTY"),
     );
+    sleep(Duration::from_millis(500));
 
     match args.command {
         Command::Read { addr, len } => {
